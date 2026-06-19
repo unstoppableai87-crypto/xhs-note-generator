@@ -1,0 +1,7 @@
+streamlit
+requests
+python-dotenv
+Pillow>=10.4
+gspread
+google-auth
+google-api-python-client

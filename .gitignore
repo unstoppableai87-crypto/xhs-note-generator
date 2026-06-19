@@ -1,0 +1,7 @@
+.env
+.tmp/
+.venv/
+__pycache__/
+*.pyc
+service_account.json
+.streamlit/secrets.toml
