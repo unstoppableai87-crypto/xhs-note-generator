@@ -201,9 +201,9 @@ with tab_queue:
             st.markdown(" ".join(f"`#{h}`" for h in d["hashtags"]))
             st.code(storage.copy_text(d), language=None)
             c1, c2 = st.columns(2)
-            if c1.button("标记为已发布", key=f"posted_{d['row_index']}"):
-                storage.update_status(d["row_index"], storage.POSTED)
+            if c1.button("标记为已发布", key=f"posted_{d['id']}"):
+                storage.update_status(d["id"], storage.POSTED)
                 st.rerun()
-            if c2.button("🗑️ 删除", key=f"delete_{d['row_index']}"):
-                storage.delete_draft(d["row_index"])
+            if c2.button("🗑️ 删除", key=f"delete_{d['id']}"):
+                storage.delete_draft(d["id"])
                 st.rerun()

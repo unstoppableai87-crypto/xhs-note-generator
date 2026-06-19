@@ -4,7 +4,7 @@ A guest opens this page (deployed as its OWN Streamlit Cloud app, separate
 from app.py), uploads a few photos, writes a few sentences about their
 experience, and submits. This auto-generates a draft note via Gemini, runs
 it through the banned-word check, and drops it straight into the shared
-Google Sheets queue - it shows up in app.py's 待发布队列 tab for the creator
+shared Supabase queue - it shows up in app.py's 待发布队列 tab for the creator
 to review/edit/approve. The guest never sees the creator's internal tools.
 """
 import streamlit as st
