@@ -1,12 +1,13 @@
 # Cloud setup: shared queue + customer link
 
 This gets you two things:
-1. A shared queue (Supabase) so customer submissions and your own drafts
-   land in the same place, durably (survives restarts). Supabase's free
-   tier needs only an email to sign up — no credit card.
-2. A public link you can send to customers (`customer_form.py`), separate
-   from your own creator tool (`app.py`) — deployed as two small free apps
-   on Streamlit Community Cloud.
+1. A shared queue (Supabase) so guest submissions and your own drafts land
+   in the same place, durably (survives restarts). Supabase's free tier
+   needs only an email to sign up — no credit card.
+2. One public link (`app.py`, deployed to Streamlit Community Cloud) that
+   serves both roles — admin and guest get the same 创建笔记/封面图
+   features, but only admin sees 📋 待发布队列. Role is decided purely by
+   which passcode you type in.
 
 You'll need an email address and a (free) GitHub account (already set up).
 
@@ -71,11 +72,10 @@ Already done — this project is pushed to
 `https://github.com/unstoppableai87-crypto/xhs-note-generator` (private repo).
 If you make more local changes, ask your assistant to commit and push again.
 
-## Part 7 — deploy two apps on Streamlit Community Cloud
+## Part 7 — deploy one app on Streamlit Community Cloud
 
-Go to https://share.streamlit.io → sign in with GitHub → **New app**, twice:
+Go to https://share.streamlit.io → sign in with GitHub → **New app**:
 
-**App 1 — your creator tool (for yourself)**
 - Repo: `unstoppableai87-crypto/xhs-note-generator` · Branch: master ·
   Main file path: `app.py`
 - After it deploys, go to **Settings → Secrets** and paste (filling in your
@@ -86,31 +86,24 @@ Go to https://share.streamlit.io → sign in with GitHub → **New app**, twice:
   SUPABASE_URL = "https://xxxxx.supabase.co"
   SUPABASE_KEY = "your-service-role-key"
   SUPABASE_BUCKET = "photos"
-  CUSTOMER_PASSCODE = "22MAC2026"
-  CREATOR_PASSCODE = "pick-a-different-code-for-yourself"
+  CUSTOMER_PASSCODE = "magisionhair"
+  CREATOR_PASSCODE = "magisionhair1203"
   ```
-- Save — `app.py` will now ask for `CREATOR_PASSCODE` before showing anything.
-  This is your own bookmark; no need to share this URL with guests.
+- Save — the app restarts and will now ask for a passcode before showing
+  anything. Enter `CREATOR_PASSCODE`'s value yourself to get full access
+  including 📋 待发布队列; share `CUSTOMER_PASSCODE`'s value with guests so
+  they get 创建笔记/封面图 only.
 
-**App 2 — the customer form (the link you send out)**
-- Same repo and branch · Main file path: `customer_form.py`
-- Same secrets as above (both apps share the same Supabase project; each
-  app only checks the passcode it cares about — `customer_form.py` ignores
-  `CREATOR_PASSCODE` and vice versa, so it's fine to paste identical secrets
-  into both apps).
-- This app's URL is the one you give to customers/guests.
-
-That's it — guests open App 2's link, enter the passcode, upload photos,
-write a few sentences, submit. It shows up in App 1's 📋 待发布队列 tab for
-you to review, edit, run the 违禁词 check, and approve.
+That's it — there's only one URL. You and your guests both open it; the
+passcode you each type in decides what you see. Guest-submitted drafts
+land in the same 📋 待发布队列 you see, tagged "👤 客户提交".
 
 ## Notes
 
 - Streamlit Community Cloud's free tier sleeps apps after inactivity; they
   wake up automatically (with a ~30s cold start) when someone opens the
   link — no action needed from you.
-- If you ever rotate the Gemini key or change the passcode, update it in
-  **both** apps' Secrets (Settings → Secrets → edit → Save, which restarts
-  the app).
+- If you ever rotate the Gemini key or either passcode, update it in
+  **Settings → Secrets → edit → Save**, which restarts the app.
 - Supabase's free tier pauses a project after 1 week with zero activity —
   opening the app once reactivates it (may take a minute the first time).

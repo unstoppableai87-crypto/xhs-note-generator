@@ -6,15 +6,20 @@ get an AI-written title + content + hashtags, run it through a 违禁词
 XHS has no public posting API, so the final "publish" step is still manual —
 this just gets you a clean, checked, copy-paste-ready draft in seconds.
 
+One app, two roles, decided by which passcode you enter:
+- **Admin** (you) — full access: 创建笔记, 封面图, and 📋 待发布队列 (the
+  shared queue of every draft, including guest submissions).
+- **Guest** (customers) — same 创建笔记 and 封面图 access, but no 待发布队列
+  tab, so they can't see other people's drafts or manage the queue.
+
 Two ways to run this:
 - **Just for yourself, locally** — `run.bat`, no cloud setup needed for
   generating/previewing notes. The queue tab needs the Supabase backend
   (see below) to actually save anything.
-- **With a public link for customers/guests** — `customer_form.py` is a
-  separate, simple intake page (upload photos + write a sentence) that
-  auto-generates a draft and drops it in your queue. This needs the
-  Supabase backend and cloud deployment — see **SETUP_CLOUD.md** for the
-  full walkthrough (free, no credit card needed).
+- **With a public link for guests** — deploy to Streamlit Community Cloud
+  and send out the one URL; guests log in with the guest passcode instead
+  of the admin one. See **SETUP_CLOUD.md** for the full walkthrough (free,
+  no credit card needed).
 
 ## Setup (one time)
 
@@ -39,10 +44,10 @@ Two ways to run this:
    flagged parts.
 4. Click **✅ 通过审核，加入待发布队列** to save the finished draft (needs
    the Supabase backend set up — see SETUP_CLOUD.md).
-5. **待发布队列 tab** — every approved draft lives here (including ones
-   customers submitted via `customer_form.py`) with its photos, a
-   copy-paste-ready text block, and a "标记为已发布" button once you've
-   actually posted it in the XHS app.
+5. **待发布队列 tab** (admin only) — every approved draft lives here
+   (including ones guests submitted) with its photos, a copy-paste-ready
+   text block, a **📲 发送到 WhatsApp** button, and a "标记为已发布" button
+   once you've actually posted it in the XHS app.
 
 ## Tuning the banned-word list
 
@@ -59,7 +64,6 @@ audit (no AI involved in this step).
 ## Where drafts are stored
 
 In a shared Supabase project — a Postgres table ("queue") for the note text
-and a Storage bucket ("photos") for images. This is what lets customer
-submissions (from a separately-hosted `customer_form.py`) and your own
-approvals land in the same queue. See **SETUP_CLOUD.md** for the one-time
-setup (free, no credit card needed).
+and a Storage bucket ("photos") for images. This is what lets guest
+submissions and your own approvals land in the same queue. See
+**SETUP_CLOUD.md** for the one-time setup (free, no credit card needed).

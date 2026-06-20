@@ -19,21 +19,27 @@ import storage
 
 st.set_page_config(page_title="XHS Note Generator", page_icon="📕", layout="wide")
 
-required_creator_passcode = config.get_setting("CREATOR_PASSCODE")
-if "creator_authenticated" not in st.session_state:
-    st.session_state.creator_authenticated = False
+creator_passcode = config.get_setting("CREATOR_PASSCODE")
+customer_passcode = config.get_setting("CUSTOMER_PASSCODE")
+if "user_role" not in st.session_state:
+    st.session_state.user_role = None  # "admin" or "guest"
 
-if required_creator_passcode and not st.session_state.creator_authenticated:
+if (creator_passcode or customer_passcode) and st.session_state.user_role is None:
     st.title("📕 XHS Note Generator")
     st.subheader("🔒 请输入访问密码")
     entered_passcode = st.text_input("密码", type="password")
     if st.button("进入", type="primary"):
-        if entered_passcode == required_creator_passcode:
-            st.session_state.creator_authenticated = True
+        if creator_passcode and entered_passcode == creator_passcode:
+            st.session_state.user_role = "admin"
+            st.rerun()
+        elif customer_passcode and entered_passcode == customer_passcode:
+            st.session_state.user_role = "guest"
             st.rerun()
         else:
             st.error("密码不正确，请重新输入。")
     st.stop()
+
+is_admin = st.session_state.user_role != "guest"
 
 st.title("📕 XHS Note Generator · 小红书笔记生成器")
 
@@ -46,15 +52,23 @@ if "form_key" not in st.session_state:
 if "just_saved" not in st.session_state:
     st.session_state.just_saved = None
 
-tab_create, tab_cover, tab_queue = st.tabs(["✍️ 创建笔记", "🖼️ 封面图", "📋 待发布队列"])
+tab_names = ["✍️ 创建笔记", "🖼️ 封面图"]
+if is_admin:
+    tab_names.append("📋 待发布队列")
+tabs = st.tabs(tab_names)
+tab_create, tab_cover = tabs[0], tabs[1]
+tab_queue = tabs[2] if is_admin else None
 
 # ---------------------------------------------------------------- Create ---
 with tab_create:
     if st.session_state.just_saved:
-        st.success(
-            f"✅ 已保存到待发布队列：{st.session_state.just_saved}"
-            " — 可以到上方「📋 待发布队列」标签页查看和复制文案。"
-        )
+        if is_admin:
+            st.success(
+                f"✅ 已保存到待发布队列：{st.session_state.just_saved}"
+                " — 可以到上方「📋 待发布队列」标签页查看和复制文案。"
+            )
+        else:
+            st.success("🎉 提交成功，谢谢分享！")
         st.session_state.just_saved = None
 
     st.subheader("1. 上传照片 & 输入要点")
@@ -156,7 +170,8 @@ with tab_create:
             with st.spinner("正在上传到队列..."):
                 try:
                     draft_id = storage.save_draft(
-                        title, content, hashtags, st.session_state.images, source="creator"
+                        title, content, hashtags, st.session_state.images,
+                        source="creator" if is_admin else "customer",
                     )
                     st.session_state.just_saved = draft_id
                     st.session_state.note = None
@@ -198,37 +213,38 @@ with tab_cover:
         )
 
 # ----------------------------------------------------------------- Queue ---
-with tab_queue:
-    st.subheader("📋 待发布队列")
-    if st.button("🔄 刷新队列"):
-        st.rerun()
-    try:
-        drafts = storage.list_drafts()
-    except storage.StorageError as e:
-        drafts = []
-        st.error(str(e))
+if is_admin:
+    with tab_queue:
+        st.subheader("📋 待发布队列")
+        if st.button("🔄 刷新队列"):
+            st.rerun()
+        try:
+            drafts = storage.list_drafts()
+        except storage.StorageError as e:
+            drafts = []
+            st.error(str(e))
 
-    if not drafts:
-        st.info("暂无草稿，先去「创建笔记」生成一篇，或者等客户提交～")
-    for d in drafts:
-        source_badge = "👤 客户提交" if d["source"] == "customer" else "✍️ 我创建"
-        with st.expander(f"{d['status']} · {source_badge} · {d['title']} · {d['created_at']}"):
-            if d["image_urls"]:
-                cols = st.columns(min(3, len(d["image_urls"])))
-                for i, url in enumerate(d["image_urls"]):
-                    cols[i % len(cols)].image(url, use_container_width=True)
-            st.write(d["content"])
-            st.markdown(" ".join(f"`#{h}`" for h in d["hashtags"]))
-            st.code(storage.copy_text(d), language=None)
+        if not drafts:
+            st.info("暂无草稿，先去「创建笔记」生成一篇，或者等客户提交～")
+        for d in drafts:
+            source_badge = "👤 客户提交" if d["source"] == "customer" else "✍️ 我创建"
+            with st.expander(f"{d['status']} · {source_badge} · {d['title']} · {d['created_at']}"):
+                if d["image_urls"]:
+                    cols = st.columns(min(3, len(d["image_urls"])))
+                    for i, url in enumerate(d["image_urls"]):
+                        cols[i % len(cols)].image(url, use_container_width=True)
+                st.write(d["content"])
+                st.markdown(" ".join(f"`#{h}`" for h in d["hashtags"]))
+                st.code(storage.copy_text(d), language=None)
 
-            wa_url = "https://wa.me/?text=" + urllib.parse.quote(storage.copy_text(d))
-            st.link_button("📲 发送到 WhatsApp", wa_url)
-            st.caption("会打开 WhatsApp 并填好文案，你选择联系人后手动发送（照片需要自己另外附加）。")
+                wa_url = "https://wa.me/?text=" + urllib.parse.quote(storage.copy_text(d))
+                st.link_button("📲 发送到 WhatsApp", wa_url)
+                st.caption("会打开 WhatsApp 并填好文案，你选择联系人后手动发送（照片需要自己另外附加）。")
 
-            c1, c2 = st.columns(2)
-            if c1.button("标记为已发布", key=f"posted_{d['id']}"):
-                storage.update_status(d["id"], storage.POSTED)
-                st.rerun()
-            if c2.button("🗑️ 删除", key=f"delete_{d['id']}"):
-                storage.delete_draft(d["id"])
-                st.rerun()
+                c1, c2 = st.columns(2)
+                if c1.button("标记为已发布", key=f"posted_{d['id']}"):
+                    storage.update_status(d["id"], storage.POSTED)
+                    st.rerun()
+                if c2.button("🗑️ 删除", key=f"delete_{d['id']}"):
+                    storage.delete_draft(d["id"])
+                    st.rerun()
