@@ -4,17 +4,37 @@
 posting (XHS has no public posting API, so the final publish step stays
 manual by design - this app just gets you a clean, checked draft fast).
 """
+import urllib.parse
+
 import streamlit as st
 from dotenv import load_dotenv
 
 load_dotenv()
 
 import compliance
+import config
 import cover
 import gemini_client
 import storage
 
 st.set_page_config(page_title="XHS Note Generator", page_icon="📕", layout="wide")
+
+required_creator_passcode = config.get_setting("CREATOR_PASSCODE")
+if "creator_authenticated" not in st.session_state:
+    st.session_state.creator_authenticated = False
+
+if required_creator_passcode and not st.session_state.creator_authenticated:
+    st.title("📕 XHS Note Generator")
+    st.subheader("🔒 请输入访问密码")
+    entered_passcode = st.text_input("密码", type="password")
+    if st.button("进入", type="primary"):
+        if entered_passcode == required_creator_passcode:
+            st.session_state.creator_authenticated = True
+            st.rerun()
+        else:
+            st.error("密码不正确，请重新输入。")
+    st.stop()
+
 st.title("📕 XHS Note Generator · 小红书笔记生成器")
 
 if "note" not in st.session_state:
@@ -200,6 +220,11 @@ with tab_queue:
             st.write(d["content"])
             st.markdown(" ".join(f"`#{h}`" for h in d["hashtags"]))
             st.code(storage.copy_text(d), language=None)
+
+            wa_url = "https://wa.me/?text=" + urllib.parse.quote(storage.copy_text(d))
+            st.link_button("📲 发送到 WhatsApp", wa_url)
+            st.caption("会打开 WhatsApp 并填好文案，你选择联系人后手动发送（照片需要自己另外附加）。")
+
             c1, c2 = st.columns(2)
             if c1.button("标记为已发布", key=f"posted_{d['id']}"):
                 storage.update_status(d["id"], storage.POSTED)

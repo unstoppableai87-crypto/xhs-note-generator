@@ -87,12 +87,17 @@ Go to https://share.streamlit.io → sign in with GitHub → **New app**, twice:
   SUPABASE_KEY = "your-service-role-key"
   SUPABASE_BUCKET = "photos"
   CUSTOMER_PASSCODE = "22MAC2026"
+  CREATOR_PASSCODE = "pick-a-different-code-for-yourself"
   ```
-- Save — this is your own bookmark. No need to share this URL with guests.
+- Save — `app.py` will now ask for `CREATOR_PASSCODE` before showing anything.
+  This is your own bookmark; no need to share this URL with guests.
 
 **App 2 — the customer form (the link you send out)**
 - Same repo and branch · Main file path: `customer_form.py`
-- Same secrets as above (both apps share the same Supabase project/passcode).
+- Same secrets as above (both apps share the same Supabase project; each
+  app only checks the passcode it cares about — `customer_form.py` ignores
+  `CREATOR_PASSCODE` and vice versa, so it's fine to paste identical secrets
+  into both apps).
 - This app's URL is the one you give to customers/guests.
 
 That's it — guests open App 2's link, enter the passcode, upload photos,
