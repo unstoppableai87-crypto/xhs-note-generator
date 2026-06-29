@@ -183,11 +183,16 @@ with tab_create:
 
 # ------------------------------------------------------------------ Cover --
 with tab_cover:
-    st.subheader("🖼️ 封面图生成器 · 4图拼版 + 中间标题")
-    st.caption("上传最多4张照片，自动拼成2x2方格，标题居中显示在中间的横条上。")
+    st.subheader("🖼️ 封面图生成器 · 4图拼版 + 标题")
+    st.caption("上传最多4张照片，自动拼成2x2方格，标题以白字黑边样式叠加在图片上。")
 
     default_title = st.session_state.note["title"] if st.session_state.note else ""
     cover_title = st.text_input("封面标题", value=default_title, key="cover_title_input")
+    cover_subtitle = st.text_input(
+        "位置/标签（可选，会显示为白底圆角标签）",
+        placeholder="例如：Tropicana 218 Macalister",
+        key="cover_subtitle_input",
+    )
     cover_photos = st.file_uploader(
         "上传照片（建议4张）",
         type=["jpg", "jpeg", "png", "webp"],
@@ -201,7 +206,9 @@ with tab_cover:
         "🖼️ 生成封面图", type="primary", disabled=not (cover_photos and cover_title.strip())
     ):
         image_bytes = [f.getvalue() for f in cover_photos[:4]]
-        st.session_state.cover_png = cover.create_cover(image_bytes, cover_title.strip())
+        st.session_state.cover_png = cover.create_cover(
+            image_bytes, cover_title.strip(), subtitle=cover_subtitle.strip() or None
+        )
 
     if st.session_state.get("cover_png"):
         st.image(st.session_state.cover_png, caption="封面预览", width=420)
