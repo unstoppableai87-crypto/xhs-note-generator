@@ -103,12 +103,39 @@ with tab_create:
     note = st.session_state.note
     if note:
         st.divider()
-        st.subheader("2. 预览 & 编辑")
+        st.subheader("2. 选择标题 & 编辑内容")
+
+        # --- 10-title selector ---
+        titles_list = note.get("titles", [])
+        rec = note.get("recommended_title", {})
+        rec_text = rec.get("text", "")
+        rec_reason = rec.get("reason", "")
+
+        if titles_list:
+            if rec_text:
+                st.info(f"💡 AI推荐：**{rec_text}**{'  — ' + rec_reason if rec_reason else ''}")
+            title_labels = [f"[{t['style']}] {t['text']}" for t in titles_list]
+            rec_idx = next((i for i, t in enumerate(titles_list) if t["text"] == rec_text), 0)
+            selected_idx = st.radio(
+                "选择标题版本（10个）",
+                range(len(title_labels)),
+                format_func=lambda i: title_labels[i],
+                index=rec_idx,
+                label_visibility="collapsed",
+            )
+            selected_title_default = titles_list[selected_idx]["text"]
+        else:
+            selected_idx = 0
+            selected_title_default = note.get("title", "")
 
         col_edit, col_preview = st.columns([1, 1])
 
         with col_edit:
-            title = st.text_input("标题 Title", value=note["title"])
+            title = st.text_input(
+                "标题 Title（可直接编辑）",
+                value=selected_title_default,
+                key=f"title_input_{selected_idx}_{st.session_state.form_key}",
+            )
             content = st.text_area("正文 Content", value=note["content"], height=250)
             hashtags_str = st.text_input(
                 "话题标签 Hashtags（用逗号分隔）", value=", ".join(note["hashtags"])
@@ -129,6 +156,44 @@ with tab_create:
                 st.markdown(f"### {title}")
                 st.write(content)
                 st.markdown(" ".join(f"`#{h}`" for h in hashtags))
+
+        # --- Rich extras in expanders ---
+        ex1, ex2 = st.columns(2)
+        with ex1:
+            if note.get("alt_hooks"):
+                with st.expander("💡 可选开头（5种 Hook）"):
+                    for i, hook in enumerate(note["alt_hooks"], 1):
+                        st.markdown(f"**方案{i}：** {hook}")
+            if note.get("seo_keywords"):
+                with st.expander("🔍 SEO 关键词"):
+                    kw = note["seo_keywords"]
+                    if kw.get("core"):
+                        st.markdown("**核心词：** " + " · ".join(kw["core"]))
+                    if kw.get("longtail"):
+                        st.markdown("**长尾词：** " + " · ".join(kw["longtail"]))
+                    if kw.get("search"):
+                        st.markdown("**搜索词：** " + " · ".join(kw["search"]))
+            if note.get("image_suggestions"):
+                with st.expander("📷 图片建议"):
+                    for s in note["image_suggestions"]:
+                        st.markdown(f"**{s.get('position','')}：** {s.get('description','')}")
+        with ex2:
+            if note.get("alt_ctas"):
+                with st.expander("💬 可选结尾（5种互动引导）"):
+                    for i, cta in enumerate(note["alt_ctas"], 1):
+                        st.markdown(f"**方案{i}：** {cta}")
+            if note.get("publish_advice"):
+                with st.expander("📅 发布建议"):
+                    pa = note["publish_advice"]
+                    if pa.get("best_time"):
+                        st.markdown(f"**⏰ 建议时间：** {pa['best_time']}")
+                    if pa.get("target_audience"):
+                        st.markdown(f"**👥 目标人群：** {pa['target_audience']}")
+                    if pa.get("comment_guide"):
+                        st.markdown(f"**💬 评论引导：** {pa['comment_guide']}")
+                    pin = pa.get("pin_comment")
+                    if pin is not None:
+                        st.markdown(f"**📌 置顶评论：** {'建议' if pin else '不需要'}")
 
         st.divider()
         st.subheader("3. 违禁词检测 Compliance Check")
