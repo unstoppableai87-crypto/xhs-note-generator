@@ -165,7 +165,7 @@ with tab_create:
                     for i, hook in enumerate(note["alt_hooks"], 1):
                         st.markdown(f"**方案{i}：** {hook}")
             if note.get("seo_keywords"):
-                with st.expander("🔍 SEO 关键词"):
+                with st.expander("🔍 搜索词参考"):
                     kw = note["seo_keywords"]
                     if kw.get("core"):
                         st.markdown("**核心词：** " + " · ".join(kw["core"]))
